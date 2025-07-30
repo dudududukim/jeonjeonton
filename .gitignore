@@ -1,0 +1,206 @@
+# ===== 환경변수 및 설정 파일 =====
+.env
+.env.local
+.env.production
+.env.staging
+config.ini
+secrets.json
+
+# ===== Python 관련 =====
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# ===== 가상환경 =====
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+weather_app/
+weather_env/
+
+# ===== IDE 및 에디터 =====
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== 시스템 파일 =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ===== 라즈베리파이 관련 =====
+# 라즈베리파이 시스템 파일
+*.img
+*.iso
+cmdline.txt.backup
+config.txt.backup
+
+# ===== 로그 및 임시 파일 =====
+# 로그 파일
+*.log
+*.log.*
+logs/
+log/
+
+# 임시 파일
+*.tmp
+*.temp
+temp/
+tmp/
+
+# 캐시 파일
+cache/
+.cache/
+
+# ===== 프로젝트 특화 =====
+# 날씨 데이터 캐시 (필요시)
+weather_cache/
+*.cache
+
+# 이미지 파일 (생성된 아이콘 등)
+generated_icons/
+temp_images/
+
+# 테스트 파일
+test_*.py
+*_test.py
+tests/
+
+# 문서화 도구
+docs/_build/
+*.pdf
+*.docx
+
+# ===== 기타 =====
+# 압축 파일
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 데이터베이스
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js (혹시 사용할 경우)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 백업 파일
+*.bak
+*.backup
+*.old
+
+# 실행 파일
+*.exe
+*.deb
+*.rpm
