@@ -1,5 +1,7 @@
-google-genai==0.8.0
+google-generativeai==0.8.0
 python-dotenv==1.0.1
 pillow==11.0.0
-Pillow
-requests
+requests==2.31.0
+pyserial==3.5
+RPi.GPIO>=0.7.0
+opencv-python==4.8.1.78
