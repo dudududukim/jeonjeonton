@@ -9,6 +9,7 @@ class ActuatorController:
         self.settings = settings
         self.serial = None
         self.active = set()
+        
         self.event_bus.subscribe(EventType.ACTUATOR_POP, self.handle_pop)
         self.event_bus.subscribe(EventType.HUMAN_OUT, self.handle_down)
 
@@ -16,8 +17,8 @@ class ActuatorController:
         """시리얼 연결 시작"""
         try:
             self.serial = serial.Serial(
-                self.settings.SERIAL_PORT, 
-                self.settings.SERIAL_BAUDRATE, 
+                self.settings.SERIAL_PORT,
+                self.settings.SERIAL_BAUDRATE,
                 timeout=self.settings.SERIAL_TIMEOUT
             )
             print(f"아두이노 연결 성공: {self.settings.SERIAL_PORT}")
@@ -34,19 +35,24 @@ class ActuatorController:
     async def handle_pop(self, event):
         """필요한 액추에이터들을 올리기"""
         needed_ids = event.detail['needed']
-        
         if not needed_ids:
             print("올릴 액추에이터가 없습니다.")
+            # 액추에이터가 필요하지 않아도 카메라는 동작
+            await self.event_bus.emit(Event(EventType.CAMERA_CAPTURE, {}))
             return
-            
+
         # 아두이노 코드에 맞게 ID 매핑
         arduino_command = self.map_to_arduino_ids(needed_ids)
-        
         print(f"액추에이터 올리기: {needed_ids} -> 아두이노 명령: '{arduino_command}'")
+        
         await self.send_command(arduino_command)
         
         # 활성화된 액추에이터 기록
         self.active.update(needed_ids)
+        
+        # 액추에이터 팝업 후 카메라 캡처 이벤트 발생
+        print("액추에이터 팝업 완료 - 카메라 캡처 시작")
+        await self.event_bus.emit(Event(EventType.CAMERA_CAPTURE, {}))
 
     async def handle_down(self, event):
         """모든 활성화된 액추에이터 내리기"""
@@ -55,20 +61,16 @@ class ActuatorController:
             # 아두이노 코드에서 '6'은 모든 액추에이터를 내리는 명령
             await self.send_command("6")
             self.active.clear()
-            
-            # 카메라 캡처 이벤트 발생
-            await self.event_bus.emit(Event(EventType.CAMERA_CAPTURE, {}))
         else:
             print("내릴 액추에이터가 없습니다.")
 
     def map_to_arduino_ids(self, needed_ids):
         """Python 서비스의 ID를 아두이노 명령어로 매핑"""
         # Python 서비스 ID -> 아두이노 명령 매핑
-        # weather_service.py의 determine_needed 결과를 아두이노 코드와 매핑
         mapping = {
             1: '1',  # 우산 -> 1번 액추에이터 (우산)
             2: '4',  # 선크림 -> 4번 액추에이터 (선글라스+선크림)
-            3: '4',  # 선글라스 -> 4번 액추에이터 (선글라스+선크림)  
+            3: '4',  # 선글라스 -> 4번 액추에이터 (선글라스+선크림)
             4: '3',  # 마스크 -> 3번 액추에이터 (마스크)
             5: '2'   # 외투(추위) -> 2번 액추에이터 (핫팩)
         }
@@ -90,7 +92,7 @@ class ActuatorController:
         if not self.serial or not self.serial.is_open:
             print("시리얼 연결이 없습니다.")
             return
-            
+
         try:
             # 아두이노 코드가 '\n'으로 명령의 끝을 인식
             full_command = f"{command}\n"
@@ -115,7 +117,7 @@ class ActuatorController:
             print("종료 전 모든 액추에이터 내리기")
             await self.send_command("6")
             self.active.clear()
-        
+            
         if self.serial and self.serial.is_open:
             await self.send_command("0")  # 모든 액추에이터 정지
             self.serial.close()
