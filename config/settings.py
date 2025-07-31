@@ -18,8 +18,8 @@ class Settings:
 
         # Weather thresholds
         self.THRESHOLDS = {
-            'precipitation': 30,
-            'cold_temp': 10,
+            'precipitation': 0,
+            'cold_temp': 40,
             'uv_sunscreen': 6,
             'uv_sunglasses': 3,
             'dust_bad': ['나쁨', '매우나쁨'],

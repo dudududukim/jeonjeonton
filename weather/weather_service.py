@@ -19,6 +19,7 @@ class WeatherService:
         data = await self.fetch_data()
         self.last_data = data
         needed = self.determine_needed(data)
+        print(f"needed 큐 : {needed}")
         if needed:
             await self.event_bus.emit(Event(EventType.ACTUATOR_POP, {'needed': needed}))
 
@@ -57,31 +58,33 @@ class WeatherService:
         
         try:
             # 강수확률 체크
+            # print(data)
             if int(data['precipitation']) >= self.settings.THRESHOLDS['precipitation']:
-                needed.append(1)  # 우산
+                needed.append(1)  # 우산 -> 아두이노 1번 (우산)
                 print(f"우산 필요 - 강수확률: {data['precipitation']}%")
             
             # 자외선 지수 체크
             if data['uv_index'].isdigit():
                 uv_val = int(data['uv_index'])
                 if uv_val >= self.settings.THRESHOLDS['uv_sunscreen']:
-                    needed.append(2)  # 선크림
+                    needed.append(2)  # 선크림 -> 아두이노 4번 (선글라스+선크림)
                     print(f"선크림 필요 - 자외선지수: {uv_val}")
                 if uv_val >= self.settings.THRESHOLDS['uv_sunglasses']:
-                    needed.append(3)  # 선글라스
+                    needed.append(3)  # 선글라스 -> 아두이노 4번 (선글라스+선크림)
                     print(f"선글라스 필요 - 자외선지수: {uv_val}")
             
             # 미세먼지 체크
             if data['dust'] in self.settings.THRESHOLDS['dust_bad']:
-                needed.append(4)  # 마스크
+                needed.append(4)  # 마스크 -> 아두이노 3번 (마스크)
                 print(f"마스크 필요 - 미세먼지: {data['dust']}")
             
-            # 온도 체크
-            if data['current_temp'].isdigit():
-                temp_val = int(data['current_temp'])
+            # 온도 체크 (추위)
+            if is_numeric(data['current_temp']):
+                # temp_val = int(data['current_temp'])
+                temp_val = float(data['current_temp'])
                 if temp_val <= self.settings.THRESHOLDS['cold_temp']:
-                    needed.append(5)  # 외투
-                    print(f"외투 필요 - 온도: {temp_val}°C")
+                    needed.append(5)  # 외투/따뜻함 -> 아두이노 2번 (핫팩)
+                    print(f"핫팩 필요 - 온도: {temp_val}°C")
             
         except Exception as e:
             print(f"액추에이터 결정 오류: {e}")
@@ -94,3 +97,11 @@ class WeatherService:
             await asyncio.sleep(self.settings.WEATHER_UPDATE_INTERVAL)
             print("날씨 업데이트 중...")
             await self.handle_update(Event(EventType.WEATHER_UPDATE, {}))
+
+def is_numeric(value):
+    """소수점 포함 숫자 검증"""
+    try:
+        float(value)
+        return True
+    except (ValueError, TypeError):
+        return False

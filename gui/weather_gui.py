@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, font
 from PIL import Image, ImageTk, ImageDraw
 import threading
 from datetime import datetime
@@ -10,8 +10,13 @@ class WeatherGUI(tk.Tk):
     def __init__(self, event_bus):
         super().__init__()
         self.title("라즈베리파이 날씨 정보")
-        self.geometry("1200x650")
+        
+        # 800x480 해상도로 조정
+        self.geometry("800x480")
         self.configure(bg='#f5f5f5')
+        
+        # 폰트 설정 - Raspberry Pi 호환
+        self.setup_fonts()
         
         # 이벤트 버스 연결
         self.event_bus = event_bus
@@ -40,25 +45,49 @@ class WeatherGUI(tk.Tk):
         # 10분마다 데이터 자동 업데이트
         self.auto_update()
 
+    def setup_fonts(self):
+        """Raspberry Pi에서 사용 가능한 한국어 폰트 설정"""
+        font_candidates = [
+            'NanumGothic',
+            'NanumBarunGothic', 
+            'Noto Sans CJK KR',
+            'DejaVu Sans',
+            'Liberation Sans',
+            'Arial'
+        ]
+        
+        available_fonts = font.families()
+        
+        self.korean_font = None
+        for font_name in font_candidates:
+            if font_name in available_fonts:
+                self.korean_font = font_name
+                print(f"사용할 폰트: {font_name}")
+                break
+        
+        if not self.korean_font:
+            self.korean_font = 'TkDefaultFont'
+            print("한국어 폰트를 찾을 수 없어 기본 폰트 사용")
+
     def setup_ui(self):
-        """UI 구성"""
-        # 메인 컨테이너
+        """기존 레이아웃 구조 유지 - 800x480 크기 최적화"""
+        # 메인 컨테이너 (여백 축소)
         main_frame = tk.Frame(self, bg='#f5f5f5')
-        main_frame.pack(fill='both', expand=True, padx=30, pady=30)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
         
-        # 왼쪽 컨테이너 (정사각형 + 버튼)
+        # 왼쪽 컨테이너 (정사각형 + 버튼) - 크기 축소
         left_container = tk.Frame(main_frame, bg='#f5f5f5')
-        left_container.pack(side='left', padx=(0, 30))
+        left_container.pack(side='left', padx=(0, 15))
         
-        # 왼쪽 프레임 (메인 정보 - 정사각형)
-        self.left_frame = tk.Frame(left_container, bg='white', width=400, height=400, relief='solid', bd=2)
+        # 왼쪽 프레임 (메인 정보 - 정사각형) - 크기 축소
+        self.left_frame = tk.Frame(left_container, bg='white', width=280, height=280, relief='solid', bd=2)
         self.left_frame.pack()
         self.left_frame.pack_propagate(False)
         
-        # 업데이트 버튼 (정사각형 밑에)
+        # 업데이트 버튼 (정사각형 밑에) - 폰트 크기 축소
         self.update_button = tk.Button(left_container,
                                      text="🔄 새로고침",
-                                     font=('맑은 고딕', 12),
+                                     font=(self.korean_font, 10),
                                      bg='#f5f5f5',
                                      fg='#6c757d',
                                      relief='flat',
@@ -67,9 +96,9 @@ class WeatherGUI(tk.Tk):
                                      activeforeground='#495057',
                                      cursor='hand2',
                                      command=self.manual_update)
-        self.update_button.pack(pady=(15, 0))
+        self.update_button.pack(pady=(10, 0))
         
-        # 오른쪽 프레임 (세부 정보 카드들 - 3x2 격자)
+        # 오른쪽 프레임 (세부 정보 카드들 - 3x2 격자 유지)
         self.right_frame = tk.Frame(main_frame, bg='#f5f5f5')
         self.right_frame.pack(side='right', fill='both', expand=True)
         
@@ -77,13 +106,13 @@ class WeatherGUI(tk.Tk):
         self.setup_main_display()
         self.setup_detail_cards()
         
-        # 상태바
+        # 상태바 - 폰트 크기 축소
         self.status_bar = tk.Label(self, text="데이터 로딩 중...",
-                                 font=('맑은 고딕', 9), bg='#e9ecef', fg='#6c757d')
+                                 font=(self.korean_font, 8), bg='#e9ecef', fg='#6c757d')
         self.status_bar.pack(side='bottom', fill='x')
 
-    def create_icon(self, icon_type, size=(64, 64)):
-        """아이콘 생성"""
+    def create_icon(self, icon_type, size=(50, 50)):
+        """아이콘 생성 - 크기 축소"""
         icon = Image.new('RGBA', size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(icon)
         
@@ -155,25 +184,25 @@ class WeatherGUI(tk.Tk):
         return ImageTk.PhotoImage(icon)
 
     def setup_main_display(self):
-        """메인 디스플레이 (현재 온도) 설정"""
-        # 제목
+        """메인 디스플레이 (현재 온도) 설정 - 크기 축소"""
+        # 제목 - 폰트 크기 축소
         self.main_title = tk.Label(self.left_frame, text="현재 온도",
-                                 font=('맑은 고딕', 24, 'bold'),
+                                 font=(self.korean_font, 16, 'bold'),
                                  bg='white', fg='#495057')
-        self.main_title.pack(pady=(50, 20))
+        self.main_title.pack(pady=(30, 15))
         
-        # 온도 아이콘
-        self.temp_icon = self.create_icon('temp', (120, 120))
+        # 온도 아이콘 - 크기 축소
+        self.temp_icon = self.create_icon('temp', (80, 80))
         self.icon_label = tk.Label(self.left_frame, image=self.temp_icon, bg='white')
-        self.icon_label.pack(pady=20)
+        self.icon_label.pack(pady=15)
         
-        # 온도 값
+        # 온도 값 - 폰트 크기 축소
         self.temp_value = tk.Label(self.left_frame, text=self.weather_data['current_temp'],
-                                 font=('맑은 고딕', 48, 'bold'), bg='white', fg='#212529')
-        self.temp_value.pack(pady=(20, 50))
+                                 font=(self.korean_font, 32, 'bold'), bg='white', fg='#212529')
+        self.temp_value.pack(pady=(15, 30))
 
     def setup_detail_cards(self):
-        """세부 정보 카드들 설정 - 3x2 격자 배치"""
+        """세부 정보 카드들 설정 - 기존 3x2 격자 유지, 크기만 축소"""
         self.cards_data = [
             ('강수확률', 'precipitation', 'rain'),
             ('최고 기온', 'max_temp', 'temp'),
@@ -185,33 +214,33 @@ class WeatherGUI(tk.Tk):
         
         self.card_labels = {}
         
-        # 3x2 격자 배치
+        # 3x2 격자 배치 유지 - 카드 크기만 축소
         for i, (title, data_key, icon_type) in enumerate(self.cards_data):
             row = i // 3  # 행 (0 또는 1)
             col = i % 3   # 열 (0, 1, 또는 2)
             
-            # 카드 프레임
+            # 카드 프레임 - 크기 축소
             card = tk.Frame(self.right_frame, bg='white', relief='solid', bd=2,
-                           width=240, height=160)
-            card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
+                           width=160, height=120)
+            card.grid(row=row, column=col, padx=8, pady=8, sticky='nsew')
             card.pack_propagate(False)
             
-            # 아이콘
-            icon = self.create_icon(icon_type, (60, 60))
+            # 아이콘 - 크기 축소
+            icon = self.create_icon(icon_type, (40, 40))
             icon_label = tk.Label(card, image=icon, bg='white')
             icon_label.image = icon
-            icon_label.pack(pady=(15, 5))
+            icon_label.pack(pady=(10, 3))
             
-            # 제목
-            title_label = tk.Label(card, text=title, font=('맑은 고딕', 14),
+            # 제목 - 폰트 크기 축소
+            title_label = tk.Label(card, text=title, font=(self.korean_font, 10),
                                  bg='white', fg='#6c757d')
-            title_label.pack(pady=(0, 5))
+            title_label.pack(pady=(0, 3))
             
-            # 값
+            # 값 - 폰트 크기 축소
             value_label = tk.Label(card, text=self.weather_data[data_key],
-                                 font=('맑은 고딕', 18, 'bold'),
+                                 font=(self.korean_font, 14, 'bold'),
                                  bg='white', fg='#212529')
-            value_label.pack(pady=(0, 15))
+            value_label.pack(pady=(0, 10))
             
             # 라벨 저장 (업데이트용)
             self.card_labels[data_key] = value_label
@@ -233,7 +262,7 @@ class WeatherGUI(tk.Tk):
             return
         
         # 버튼 상태 변경
-        self.update_button.config(text="⏳ 업데이트 중...", state='disabled')
+        self.update_button.config(text="⏳ 업데이트중", state='disabled')
         self.status_bar.config(text="수동 업데이트 중...")
         
         # 강제 새로고침으로 업데이트 실행
