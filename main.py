@@ -6,8 +6,6 @@ from events.event_bus import EventBus
 from weather.weather_service import WeatherService
 from sensors.pir_sensor import PIRSensor
 from actuators.actuator_controller import ActuatorController
-from camera.camera_service import CameraService
-from ai.gemini_service import GeminiService
 from gui.weather_gui import WeatherGUI
 from utils.logger import setup_logger
 
@@ -29,8 +27,7 @@ def start_background_services():
     weather = WeatherService(shared_event_bus, settings)
     pir = PIRSensor(shared_event_bus, settings)
     actuator = ActuatorController(shared_event_bus, settings)
-    camera = CameraService(shared_event_bus, settings)
-    gemini = GeminiService(shared_event_bus, settings)
+
 
     print("백그라운드 서비스 시작됨")
 

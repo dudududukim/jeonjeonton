@@ -68,19 +68,17 @@ class WeatherService:
         
         try:
             # 강수확률 체크
-            if int(data['precipitation']) >= self.settings.THRESHOLDS['precipitation']:
-                needed.append(1)  # 우산 -> 아두이노 1번 (우산)
-                print(f"우산 필요 - 강수확률: {data['precipitation']}%")
+            if is_numeric(data['precipitation']):
+                if int(data['precipitation']) >= self.settings.THRESHOLDS['precipitation']:
+                    needed.append(1)  # 우산 -> 아두이노 1번 (우산)
+                    print(f"우산 필요 - 강수확률: {data['precipitation']}%")
             
-            # 자외선 지수 체크
+            # 자외선 지수 체크 (선글라스 부분 제거, 선크림만 유지)
             if data['uv_index'].isdigit():
                 uv_val = int(data['uv_index'])
                 if uv_val >= self.settings.THRESHOLDS['uv_sunscreen']:
                     needed.append(2)  # 선크림 -> 아두이노 4번 (선글라스+선크림)
                     print(f"선크림 필요 - 자외선지수: {uv_val}")
-                if uv_val >= self.settings.THRESHOLDS['uv_sunglasses']:
-                    needed.append(3)  # 선글라스 -> 아두이노 4번 (선글라스+선크림)
-                    print(f"선글라스 필요 - 자외선지수: {uv_val}")
             
             # 미세먼지 체크
             if data['dust'] in self.settings.THRESHOLDS['dust_bad']:
@@ -94,6 +92,13 @@ class WeatherService:
                     needed.append(5)  # 외투/따뜻함 -> 아두이노 2번 (핫팩)
                     print(f"핫팩 필요 - 온도: {temp_val}°C")
                     
+            # 습도 체크 (건조함) - 6번에서 3번으로 매핑 변경
+            if is_numeric(data['humidity']):
+                humidity_val = int(data['humidity'])
+                if humidity_val <= self.settings.THRESHOLDS['low_humidity']:
+                    needed.append(3)  # 가습기 -> 아두이노 3번 (마스크와 함께 사용될 수 있음, 또는 새로운 번호)
+                    print(f"핸드크림 필요 - 습도: {humidity_val}%")
+
         except Exception as e:
             print(f"액추에이터 결정 오류: {e}")
             

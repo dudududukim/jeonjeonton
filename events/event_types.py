@@ -7,8 +7,7 @@ class EventType(Enum):
     ACTUATOR_POP = "actuator_pop"
     HUMAN_COME = "human_come"
     HUMAN_OUT = "human_out"
-    CAMERA_CAPTURE = "camera_capture"
-    GEMINI_RESPONSE = "gemini_response"
+    
 
 @dataclass
 class Event:

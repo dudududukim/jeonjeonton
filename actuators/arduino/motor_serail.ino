@@ -11,6 +11,7 @@ bool commandComplete = false;
 
 void setup() {
   Serial.begin(9600);
+
   
   // 모든 액추에이터 핀 초기화
   initializeActuator(ACT1_IN1, ACT1_IN2, ENA_ACT1);

@@ -8,8 +8,9 @@ class ActuatorController:
         self.event_bus = event_bus
         self.settings = settings
         self.serial = None
-        self.active = set()
-        
+        self.active = set() # 현재 활성화된 액추에이터 ID를 저장하는 set
+        self.first_valid_signal_processed = False # 첫 번째 유효한 신호가 처리되었는지 여부
+
         self.event_bus.subscribe(EventType.ACTUATOR_POP, self.handle_pop)
         self.event_bus.subscribe(EventType.HUMAN_OUT, self.handle_down)
 
@@ -24,8 +25,10 @@ class ActuatorController:
             print(f"아두이노 연결 성공: {self.settings.SERIAL_PORT}")
             await asyncio.sleep(2)  # 아두이노 초기화 대기
             
-            # 시작 시 모든 액추에이터 초기화
+            # 시작 시 모든 액추에이터 초기화 (모두 내림)
             await self.send_command("0")
+            self.active.clear() # 시작 시 active 상태도 초기화
+            self.first_valid_signal_processed = False # 컨트롤러 시작 시 플래그 초기화
             print("액추에이터 컨트롤러 시작됨")
             
         except Exception as e:
@@ -35,24 +38,42 @@ class ActuatorController:
     async def handle_pop(self, event):
         """필요한 액추에이터들을 올리기"""
         needed_ids = event.detail['needed']
-        if not needed_ids:
-            print("올릴 액추에이터가 없습니다.")
-            # 액추에이터가 필요하지 않아도 카메라는 동작
-            await self.event_bus.emit(Event(EventType.CAMERA_CAPTURE, {}))
+        current_needed_set = set(needed_ids)
+
+        # 첫 번째 유효한 신호가 이미 처리되었다면, 이후 모든 ACTUATOR_POP 이벤트를 무시
+        if self.first_valid_signal_processed:
+            print("첫 유효 신호 처리 완료. 이후 ACTUATOR_POP 신호는 무시합니다.")
             return
 
+        # 필요한 액추에이터가 전혀 없는 경우 (모두 내릴 때)
+        if not needed_ids:
+            print("올릴 액추에이터가 없습니다. 모든 액추에이터를 내립니다.")
+            await self.send_command("0") # 모든 액추에이터 내리는 명령 전송
+            self.active.clear() # 활성화된 액추에이터 목록 초기화
+            await asyncio.sleep(2) # 기존 딜레이 유지
+            print("액추에이터 팝업 완료 ")
+            # 비어있는 신호는 '첫 유효 신호'로 간주하지 않으므로 플래그를 변경하지 않음
+            return
+
+        # 첫 번째 유효한 (비어있지 않은) 신호가 들어온 경우
+        print(f"첫 번째 유효 신호 감지. 액추에이터 올리기: {needed_ids}")
+        
         # 아두이노 코드에 맞게 ID 매핑
         arduino_command = self.map_to_arduino_ids(needed_ids)
         print(f"액추에이터 올리기: {needed_ids} -> 아두이노 명령: '{arduino_command}'")
         
         await self.send_command(arduino_command)
         
-        # 활성화된 액추에이터 기록
-        self.active.update(needed_ids)
+        # 활성화된 액추에이터 목록을 현재 필요한 목록으로 업데이트
+        self.active = current_needed_set
         
-        # 액추에이터 팝업 후 카메라 캡처 이벤트 발생
-        print("액추에이터 팝업 완료 - 카메라 캡처 시작")
-        await self.event_bus.emit(Event(EventType.CAMERA_CAPTURE, {}))
+        # 첫 번째 유효 신호 처리 완료 플래그 설정
+        self.first_valid_signal_processed = True
+        
+        # await asyncio.sleep(2)  # 액추에이터 작동 시간 대기 - 이 부분을 제거했습니다.
+        
+        print("액추에이터 팝업 완료 ")
+        
 
     async def handle_down(self, event):
         """모든 활성화된 액추에이터 내리기"""
@@ -60,7 +81,9 @@ class ActuatorController:
             print(f"액추에이터 내리기: {self.active}")
             # 아두이노 코드에서 '6'은 모든 액추에이터를 내리는 명령
             await self.send_command("6")
-            self.active.clear()
+            self.active.clear() # 모든 액추에이터가 내려갔으므로 active 상태 초기화
+            # 사람이 나갔으므로, 다음 사람이 들어왔을 때 다시 액추에이터가 작동할 수 있도록 플래그 초기화
+            self.first_valid_signal_processed = False 
         else:
             print("내릴 액추에이터가 없습니다.")
 
@@ -68,11 +91,11 @@ class ActuatorController:
         """Python 서비스의 ID를 아두이노 명령어로 매핑"""
         # Python 서비스 ID -> 아두이노 명령 매핑
         mapping = {
-            1: '1',  # 우산 -> 1번 액추에이터 (우산)
-            2: '4',  # 선크림 -> 4번 액추에이터 (선글라스+선크림)
-            3: '4',  # 선글라스 -> 4번 액추에이터 (선글라스+선크림)
-            4: '3',  # 마스크 -> 3번 액추에이터 (마스크)
-            5: '2'   # 외투(추위) -> 2번 액추에이터 (핫팩)
+            1: '5',  # 우산 -> 1번 액추에이터 (우산)
+            2: '3',  # 선크림 -> 3번 액추에이터 (선글라스+선크림) 
+            3: '1',  # 핸드크림 (이전 습도 체크 매핑 3번)
+            4: '4',  # 마스크 -> 3번 액추에이터 (마스크)
+            5: '2',  # 외투(추위) -> 2번 액추에이터 (핫팩)
         }
         
         # 중복 제거하면서 아두이노 명령 생성
@@ -85,7 +108,7 @@ class ActuatorController:
         
         # 정렬된 문자열로 반환 (예: "13", "24" 등)
         command = ''.join(sorted(arduino_ids))
-        return command if command else "0"
+        return command if command else "0" # 명령이 없으면 '0' (모두 내림)
 
     async def send_command(self, command):
         """아두이노로 명령 전송"""
@@ -105,9 +128,6 @@ class ActuatorController:
                 response = self.serial.readline().decode('utf-8').rstrip()
                 print(f"아두이노 응답: {response}")
             
-            # 액추에이터 작동 시간 대기
-            await asyncio.sleep(self.settings.ACTUATOR_OPERATION_TIME)
-            
         except Exception as e:
             print(f"시리얼 명령 전송 오류: {e}")
 
@@ -119,7 +139,7 @@ class ActuatorController:
             self.active.clear()
             
         if self.serial and self.serial.is_open:
-            await self.send_command("0")  # 모든 액추에이터 정지
+            await self.send_command("0")  # 모든 액추에이터 정지 (안전 종료)
             self.serial.close()
             print("시리얼 연결 종료")
 
